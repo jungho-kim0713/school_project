@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학교 홍보 AI 플랫폼</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">🏫 School Archive</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="text-center py-5">
+            <h1 class="display-5 fw-bold">우리 학교의 모든 순간</h1>
+            <p class="lead text-muted">AI와 함께 기록하는 학교의 추억</p>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for post in posts %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    {% if post.image %}
+                    <img src="{{ post.image.url }}" class="card-img-top" alt="photo" style="height: 250px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ post.title }}</h5>
+                        <p class="card-text text-truncate">{{ post.content }}</p>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">등록된 게시물이 없습니다. 관리자 페이지에서 추가해주세요.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
