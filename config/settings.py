@@ -1,16 +1,25 @@
+"""
+[파일 경로] config/settings.py
+[설명] .env 파일을 사용하여 보안 키를 관리하도록 수정되었습니다.
+       불필요한 OCI Access Key 관련 설정을 제거했습니다.
+"""
+
 from pathlib import Path
 import os
+from dotenv import load_dotenv # 패키지 로드
+
+# 1. .env 파일 활성화
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-change-me-later-for-production'
+# 2. SECRET_KEY 가져오기
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# 개발 모드 (배포 시에는 False로 변경 권장)
 DEBUG = True
 
-# 모든 IP 접속 허용 (배포용)
 ALLOWED_HOSTS = ['*']
 
 # Application definition
@@ -21,7 +30,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'photo',  # 우리가 만든 앱
+    'photo',      # 우리 앱
+    'storages',   # [필수] OCI 연동 라이브러리
 ]
 
 MIDDLEWARE = [
@@ -39,7 +49,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -78,19 +88,38 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
 LANGUAGE_CODE = 'ko-kr'
 TIME_ZONE = 'Asia/Seoul'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+# ==========================================
+# 🎨 정적 파일 설정
+# ==========================================
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 
-# Default primary key field type
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# ==========================================
+# ☁️ OCI Object Storage 설정 (Native SDK)
+# ==========================================
+AWS_STORAGE_BUCKET_NAME = 'school-media'
+OCI_NAMESPACE = 'axypprkugw7b'
+OCI_REGION = 'ap-chuncheon-1'
 
-# Media files (이미지 업로드용 설정)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# [제거됨] OCI Access Key/Secret Key 관련 설정은 Native SDK 방식에서 필요 없습니다.
+# 인증은 ~/.oci/config와 pem 키 파일을 통해 이루어집니다.
+
+# Django 6.0 호환 스토리지 설정
+STORAGES = {
+    "default": {
+        "BACKEND": "config.storage.OCIStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# 미디어 파일 URL
+MEDIA_URL = f'https://objectstorage.{OCI_REGION}.oraclecloud.com/n/{OCI_NAMESPACE}/b/{AWS_STORAGE_BUCKET_NAME}/o/'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

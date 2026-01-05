@@ -1,0 +1,336 @@
+###################################################
+
+🏫 학교 AI 아카이브 프로젝트 개발 완료 보고서 (v1.0)
+
+
+최종 업데이트: 2026년 1월 5일
+
+###################################################
+
+1. 프로젝트 개요
+
+목표: 학교 활동 사진을 기록하고, AI가 자동으로 설명을 생성해주는 스마트 아카이브 플랫폼 구축.
+
+서버 환경: Oracle Cloud Infrastructure (OCI) ARM 인스턴스 (Ubuntu).
+
+기술 스택: Django 6.0, Gunicorn, Nginx, SQLite.
+
+핵심 기능:
+
+OCI Object Storage 연동: django-storages의 boto3 호환성 문제 해결을 위해 OCI Native SDK 기반 커스텀 스토리지 구현.
+
+Gemini AI 자동 분석: 이미지 업로드 시 gemini-3-flash-preview 모델이 사진을 분석하여 캡션 자동 생성.
+
+파일 자동 삭제: 게시글 삭제 시 OCI 버킷의 실제 파일도 함께 삭제.
+
+보안 강화: .env 파일을 사용하여 민감한 API 키 관리 및 OCI 인증 키 분리.
+
+2. 해결된 주요 이슈 (Troubleshooting)
+
+OCI MissingContentLength 에러 (411):
+
+원인: boto3가 S3 호환 모드에서 Content-Length 헤더를 누락하거나 Chunked encoding을 사용하여 OCI가 거부함.
+
+해결: boto3를 제거하고 **Oracle 공식 Python SDK (oci)**를 사용하는 OCIStorage 백엔드를 직접 개발하여 적용함.
+
+AI 분석 미작동 (404 Error):
+
+원인: API 키 권한에 gemini-1.5-flash 모델이 포함되지 않음.
+
+해결: 모델 가용성 테스트(check_ai.py) 후 **gemini-3-flash-preview**로 모델 변경.
+
+이미지 업로드 실종 (Django 6.0 호환성):
+
+원인: Django 6.0부터 DEFAULT_FILE_STORAGE 설정이 폐기됨.
+
+해결: STORAGES 딕셔너리 설정으로 문법 수정.
+
+502 Bad Gateway:
+
+원인: signals.py 문법 오류 및 라이브러리 미설치.
+
+해결: 구문 수정 및 pip install google-generativeai pillow oci python-dotenv 완료.
+
+3. 핵심 파일 및 설정 (현재 상태)
+
+3-1. 필수 패키지
+
+pip install django gunicorn oci google-generativeai pillow python-dotenv
+
+
+3-2. OCI 인증 설정 (Native SDK)
+
+위치: /home/ubuntu/.oci/config (및 oci_api_key.pem)
+
+권한: chmod 600 필수.
+
+내용: User OCID, Tenancy OCID, Fingerprint, Key 파일 경로 포함.
+
+3-3. .env 파일 (환경 변수 관리)
+
+위치: 프로젝트 루트 (manage.py와 같은 위치). .gitignore에 반드시 포함.
+
+# Django Secret Key
+SECRET_KEY='django-insecure-change-me-later-for-production'
+
+# Gemini API Key
+GEMINI_API_KEY='AIzaSyBRrPa6pMrbkDkP-isNWKubs3wAUDoCcHo'
+
+
+3-4. config/storage.py (OCI Native SDK 스토리지)
+
+특이사항: boto3를 쓰지 않고 oci 라이브러리를 직접 사용하여 구현됨. Gunicorn 실행 권한 문제를 위해 절대 경로 사용.
+
+import os
+import oci
+import logging
+from django.conf import settings
+from django.core.files.storage import Storage
+from django.utils.deconstruct import deconstructible
+from django.core.files.base import ContentFile
+import mimetypes
+
+logger = logging.getLogger('django')
+
+@deconstructible
+class OCIStorage(Storage):
+    def __init__(self, option=None):
+        try:
+            self.config_profile = "DEFAULT"
+            # Gunicorn 실행 계정 문제 방지를 위한 절대 경로 사용
+            self.config_path = "/home/ubuntu/.oci/config" 
+            
+            if not os.path.exists(self.config_path):
+                raise FileNotFoundError(f"🚨 OCI Config 없음: {self.config_path}")
+
+            self.config = oci.config.from_file(self.config_path, self.config_profile)
+            self.object_storage = oci.object_storage.ObjectStorageClient(self.config)
+            
+            self.namespace = settings.OCI_NAMESPACE
+            self.bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+            self.region = self.config['region']
+        except Exception as e:
+            logger.error(f"❌ OCI Init Error: {e}")
+            raise e
+
+    def _save(self, name, content):
+        try:
+            content.seek(0)
+            file_data = content.read()
+            content_type, _ = mimetypes.guess_type(name)
+            if not content_type: content_type = 'application/octet-stream'
+
+            self.object_storage.put_object(
+                self.namespace, self.bucket_name, name, file_data, content_type=content_type
+            )
+            return name
+        except Exception as e:
+            logger.error(f"❌ Upload Error: {e}")
+            raise e
+
+    def url(self, name):
+        return f"https://objectstorage.{self.region}[.oraclecloud.com/n/](https://.oraclecloud.com/n/){self.namespace}/b/{self.bucket_name}/o/{name}"
+
+
+3-5. config/settings.py (핵심 설정)
+
+특이사항: .env 로드, Django 6.0 STORAGES 설정 적용, OCI Native URL 사용.
+
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# ... (기본 설정 생략) ...
+
+SECRET_KEY = os.getenv('SECRET_KEY')
+
+# OCI Object Storage 설정 (Native SDK)
+AWS_STORAGE_BUCKET_NAME = 'school-media'
+OCI_NAMESPACE = 'axypprkugw7b'
+OCI_REGION = 'ap-chuncheon-1'
+
+# Django 6.0 호환 스토리지 설정
+STORAGES = {
+    "default": {
+        "BACKEND": "config.storage.OCIStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# 미디어 파일 URL
+MEDIA_URL = f'https://objectstorage.{OCI_REGION}[.oraclecloud.com/n/](https://.oraclecloud.com/n/){OCI_NAMESPACE}/b/{AWS_STORAGE_BUCKET_NAME}/o/'
+
+
+3-6. photo/signals.py (AI 분석 & 자동 삭제)
+
+특이사항: gemini-3-flash-preview 모델 사용, .env에서 API 키 로드.
+
+import google.generativeai as genai
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from .models import MediaPost
+from PIL import Image
+import io
+import logging
+import os
+
+logger = logging.getLogger('django')
+
+# .env에서 API 키 로드
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+else:
+    logger.error("🚨 GEMINI_API_KEY 누락됨!")
+
+# 1. AI 이미지 분석
+@receiver(post_save, sender=MediaPost)
+def analyze_image_with_gemini(sender, instance, created, **kwargs):
+    if not created or instance.ai_caption or not GEMINI_API_KEY: return
+
+    try:
+        with instance.file.open('rb') as f:
+            image_bytes = f.read()
+            if len(image_bytes) == 0: return
+            image = Image.open(io.BytesIO(image_bytes))
+
+        # gemini-3-flash-preview 사용
+        model = genai.GenerativeModel('gemini-3-flash-preview')
+        prompt = "이 사진은 학교 활동을 기록한 사진이야. 학생들에게 설명하듯이 따뜻하고 긍정적인 말투(해요체)로 2~3문장 요약해줘."
+        
+        response = model.generate_content([prompt, image])
+        instance.ai_caption = response.text
+        instance.save(update_fields=['ai_caption'])
+        logger.info(f"✅ AI Success: {instance.title}")
+    except Exception as e:
+        logger.error(f"❌ AI Error: {e}")
+
+# 2. 파일 자동 삭제
+@receiver(post_delete, sender=MediaPost)
+def cleanup_file_on_delete(sender, instance, **kwargs):
+    if instance.file:
+        try:
+            instance.file.delete(save=False)
+            logger.info("✅ File Deleted")
+        except Exception as e:
+            logger.error(f"⚠️ File Delete Error: {e}")
+
+
+3-7. .gitignore 및 파일 구조
+
+# .gitignore
+.env
+.oci/
+oci_api_key.pem
+__pycache__/
+*.py[cod]
+venv/
+db.sqlite3
+media/
+media_posts/
+images/
+.DS_Store
+.vscode/
+
+
+/home/ubuntu/
+├── .oci/                         # [보안] OCI 인증 정보 폴더 (config, oci_api_key.pem)
+│
+/var/www/school_project/          # [메인] 프로젝트 루트
+├── .env                          # [보안] 비밀키 모음
+├── check_ai.py                   # (진단용)
+├── check_oci_native.py           # (진단용)
+├── db.sqlite3                    # DB 파일
+├── manage.py                     
+├── venv/                         
+├── static/                       
+├── templates/                    
+│   └── index.html                
+│
+├── config/                       
+│   ├── settings.py               # [수정됨] .env 적용, OCI Native SDK 적용
+│   ├── storage.py                # [생성됨] OCI Native SDK 커스텀 스토리지
+│   ├── urls.py                   
+│   └── wsgi.py                   
+│
+└── photo/                        
+    ├── admin.py                  
+    ├── apps.py                   # [수정됨] signals 등록
+    ├── models.py                 
+    ├── signals.py                # [생성됨] AI 로직
+    └── views.py                  
+
+
+4. 향후 과제 및 고도화 계획 (Next Steps)
+
+현재는 관리자가 이미지를 올리면 AI가 분석해주는 '핵심 백엔드 기능'까지 완성된 상태입니다. 실제 서비스 런칭을 위해 다음 단계들을 추천합니다.
+
+🔍 AI 검색 기능 구현:
+
+지금은 AI가 설명만 달아주지만, 이 설명(ai_caption)을 기반으로 사용자가 "체육대회", "동아리" 등으로 사진을 검색할 수 있는 기능을 웹페이지(index.html)에 추가.
+
+🌐 도메인 및 HTTPS 연결:
+
+현재 IP 주소(152.67...)로 접속하는 방식을 학교 이름이 들어간 도메인(예: school-archive.com)으로 변경.
+
+보안을 위해 무료 SSL(Let's Encrypt)을 적용하여 https:// 접속 지원.
+
+📱 프론트엔드 디자인 개선:
+
+현재의 기본 Bootstrap 디자인을 학교 색상이나 로고에 맞춰 커스터마이징.
+
+모바일에서도 사진을 보기 편하도록 반응형 갤러리 UI 개선.
+
+👥 사용자 권한 확장:
+
+지금은 슈퍼유저(관리자)만 업로드 가능하지만, 선생님이나 학생회 임원용 계정을 만들어 업로드 권한 부여.
+
+===================================================
+5. 운영 및 유지보수 매뉴얼
+===================================================
+
+# 1. 가상환경 활성화
+source venv/bin/activate
+가상환경 비활성화
+deactivate
+
+
+# 2. 기존 DB 및 설계도 삭제 (완전 초기화)
+rm db.sqlite3
+rm -rf photo/migrations
+mkdir -p photo/migrations
+touch photo/migrations/__init__.py
+
+# 3. DB 새로 만들기
+python manage.py makemigrations
+python manage.py migrate
+
+# 4. 관리자 계정 생성 (DB가 지워졌을 때 다시 만드는 방법)
+python manage.py createsuperuser
+# (아이디, 비밀번호 입력 후 y)
+
+# 5. 서버 재시작
+sudo systemctl restart gunicorn
+sudo systemctl restart nginx
+
+로그 확인: sudo journalctl -u gunicorn -f 명령어로 실시간 디버깅 가능.
+모델 변경: 향후 gemini-3 모델이 만료되거나 더 좋은 모델이 나오면 photo/signals.py에서 모델명 수정 필요.
+
+저장소 초기화 및 첫 커밋(Git에게 "이 폴더를 관리해줘!"라고 명령하는 법)
+
+# 프로젝트 폴더인지 확인
+cd /var/www/school_project
+
+# Git 초기화 (이제 .git 폴더가 생깁니다)
+git init
+
+# .gitignore가 잘 작동하는지 확인하고 모든 파일 담기
+git add .
+
+# 커밋 (저장)
+git commit -m "첫 번째 커밋: 학교 홍보 플랫폼 기본 구축 완료"

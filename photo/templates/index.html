@@ -3,41 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>학교 홍보 AI 플랫폼</title>
+    <title>학교 스마트 아카이브</title>
+    <!-- 부트스트랩 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 아이콘 (Bootstrap Icons) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        /* 네비게이션 탭 스타일 */
+        .nav-pills .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 8px 20px;
+        }
+        .nav-pills .nav-link.active {
+            background-color: white;
+            color: #0d6efd; /* Bootstrap Primary Color */
+            font-weight: bold;
+        }
+        .nav-pills .nav-link:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* 카드 이미지 높이 고정 */
+        .card-img-top {
+            height: 250px;
+            object-fit: cover;
+        }
+
+        /* 링크 카드 스타일 (4:3 비율) */
+        .link-card-img-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 75%; /* 4:3 비율 */
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .link-card-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+        }
+        
+        /* 호버 효과 */
+        .hover-shadow:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+            transition: all 0.3s;
+        }
+    </style>
 </head>
 <body class="bg-light">
-    <nav class="navbar navbar-dark bg-primary mb-4">
+
+    <!-- 상단 네비게이션 (파란색 배경 + 탭 메뉴) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3 sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">🏫 School Archive</a>
+            <a class="navbar-brand fw-bold fs-4 me-5" href="#">🏫 School Archive</a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- 메뉴 아이템 (탭 버튼) -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="nav nav-pills ms-auto" id="pills-tab" role="tablist">
+                    <li class="nav-item me-2" role="presentation">
+                        <button class="nav-link active" id="tab-media" data-bs-toggle="pill" data-bs-target="#content-media" type="button">
+                            📸 갤러리
+                        </button>
+                    </li>
+                    <li class="nav-item me-2" role="presentation">
+                        <button class="nav-link" id="tab-text" data-bs-toggle="pill" data-bs-target="#content-text" type="button">
+                            📝 게시판
+                        </button>
+                    </li>
+                    <li class="nav-item me-2" role="presentation">
+                        <button class="nav-link" id="tab-code" data-bs-toggle="pill" data-bs-target="#content-code" type="button">
+                            💻 개발/자료
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-link" data-bs-toggle="pill" data-bs-target="#content-link" type="button">
+                            🔗 공식 링크
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="text-center py-5">
-            <h1 class="display-5 fw-bold">우리 학교의 모든 순간</h1>
-            <p class="lead text-muted">AI와 함께 기록하는 학교의 추억</p>
-        </div>
+    <!-- 메인 타이틀 -->
+    <div class="container py-5 text-center">
+        <h2 class="fw-bold display-5">우리 학교의 모든 순간</h2>
+        <p class="text-muted lead">AI와 함께 기록하는 스마트 아카이브</p>
+    </div>
 
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for post in posts %}
-            <div class="col">
-                <div class="card h-100 shadow-sm">
-                    {% if post.image %}
-                    <img src="{{ post.image.url }}" class="card-img-top" alt="photo" style="height: 250px; object-fit: cover;">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ post.title }}</h5>
-                        <p class="card-text text-truncate">{{ post.content }}</p>
+    <!-- 콘텐츠 영역 (탭 내용) -->
+    <div class="container pb-5">
+        <div class="tab-content" id="pills-tabContent">
+            
+            <!-- 1. 미디어 갤러리 (이미지/영상) -->
+            <div class="tab-pane fade show active" id="content-media" role="tabpanel">
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for post in media_posts %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0 hover-shadow">
+                            {% if post.file %}
+                            <img src="{{ post.file.url }}" class="card-img-top" alt="{{ post.title }}">
+                            {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-secondary text-white">
+                                <span>이미지 없음</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="card-body">
+                                <h5 class="card-title fw-bold">{{ post.title }}</h5>
+                                <p class="card-text text-muted small">{{ post.description|truncatechars:50 }}</p>
+                                
+                                <!-- AI 분석 결과 표시 -->
+                                {% if post.ai_caption %}
+                                <div class="alert alert-info py-2 px-3 mt-3 mb-0 small">
+                                    <i class="bi bi-robot me-1"></i> {{ post.ai_caption }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center">
+                                <small class="text-muted">{{ post.created_at|date:"Y-m-d" }}</small>
+                                <div>
+                                    <i class="bi bi-heart-fill text-danger"></i> {{ post.like_count }}
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5 text-muted">
+                        <div class="fs-1 mb-3">🖼️</div>
+                        <p>등록된 사진이 없습니다.</p>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
-            {% empty %}
-            <div class="col-12 text-center py-5">
-                <p class="text-muted">등록된 게시물이 없습니다. 관리자 페이지에서 추가해주세요.</p>
+
+            <!-- 2. 게시판 (글) -->
+            <div class="tab-pane fade" id="content-text" role="tabpanel">
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    {% for post in text_posts %}
+                    <div class="col">
+                        <div class="card h-100 border-2 hover-shadow">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2 text-secondary small">
+                                    <span>{{ post.created_at|date:"Y.m.d" }}</span>
+                                    <span>{{ post.author_name }}</span>
+                                </div>
+                                <h4 class="card-title fw-bold">{{ post.title }}</h4>
+                                <p class="card-text mt-3">{{ post.content|truncatechars:100 }}</p>
+                            </div>
+                            <div class="card-footer bg-white border-0 text-end">
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#textModal{{ post.id }}">더 보기</button>
+                            </div>
+                        </div>
+
+                        <!-- 글 상세 모달 -->
+                        <div class="modal fade" id="textModal{{ post.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title fw-bold">{{ post.title }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body py-4" style="white-space: pre-line;">{{ post.content }}</div>
+                                    <div class="modal-footer">
+                                        <small class="text-muted me-auto">작성자: {{ post.author_name }}</small>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5 text-muted">
+                        <div class="fs-1 mb-3">📝</div>
+                        <p>등록된 글이 없습니다.</p>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-            {% endfor %}
+
+            <!-- 3. 개발/자료 (코드) -->
+            <div class="tab-pane fade" id="content-code" role="tabpanel">
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for link in code_links %}
+                    <div class="col">
+                        <div class="card h-100 border-dark hover-shadow">
+                            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                                <span class="badge bg-secondary">{{ link.get_category_display }}</span>
+                                <small>{{ link.created_at|date:"m.d" }}</small>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title fw-bold">
+                                    <i class="bi bi-code-slash me-2"></i>{{ link.title }}
+                                </h5>
+                                <p class="card-text text-muted small">{{ link.description }}</p>
+                            </div>
+                            <div class="card-footer bg-white border-0">
+                                <a href="{{ link.url }}" target="_blank" class="btn btn-dark w-100">
+                                    바로가기 <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5 text-muted">
+                        <div class="fs-1 mb-3">💻</div>
+                        <p>공유된 코드가 없습니다.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 4. 공식 링크 -->
+            <div class="tab-pane fade" id="content-link" role="tabpanel">
+                <div class="row row-cols-2 row-cols-md-4 g-4">
+                    {% for link in official_links %}
+                    <div class="col">
+                        <a href="{{ link.url }}" target="_blank" class="text-decoration-none text-dark">
+                            <div class="card h-100 shadow-sm border-0 hover-shadow text-center">
+                                <div class="link-card-img-wrapper rounded-top">
+                                    <div class="link-card-icon">
+                                        {% if link.icon_type == 'YOUTUBE' %}<i class="bi bi-youtube text-danger"></i>
+                                        {% elif link.icon_type == 'INSTAGRAM' %}<i class="bi bi-instagram text-danger"></i>
+                                        {% elif link.icon_type == 'BLOG' %}<i class="bi bi-pencil-square text-success"></i>
+                                        {% else %}<i class="bi bi-globe text-primary"></i>{% endif %}
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title fw-bold mb-0">{{ link.title }}</h6>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5 text-muted">
+                        <div class="fs-1 mb-3">🔗</div>
+                        <p>등록된 링크가 없습니다.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
         </div>
     </div>
+
+    <!-- 하단 푸터 -->
+    <footer class="py-4 mt-auto bg-white border-top">
+        <div class="container text-center text-muted">
+            &copy; 2024 School Archive Project. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- 부트스트랩 JS (탭 기능 필수) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
