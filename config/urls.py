@@ -1,8 +1,6 @@
 """
 [파일 경로] config/urls.py
-[설명] 
-1. allauth URL을 포함시켜 /accounts/login, /accounts/google/login 등을 활성화합니다.
-2. photo 앱의 URL도 그대로 유지합니다.
+[설명] allauth 경로를 추가하여 로그인 페이지 404 에러를 해결했습니다.
 """
 from django.contrib import admin
 from django.urls import path, include  # include 모듈 필수!
@@ -13,7 +11,7 @@ from photo import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # [핵심] 이 줄이 있어야 로그인/로그아웃/회원가입 기능이 작동합니다!
+    # [핵심] 로그인/로그아웃 경로 연결 (이게 없어서 그동안 404가 떴던 겁니다)
     path('accounts/', include('allauth.urls')),
     
     path('', views.index, name='index'),
