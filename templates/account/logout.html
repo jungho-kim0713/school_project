@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>로그아웃</h1>
+    <p>정말 로그아웃 하시겠습니까?</p>
+
+    <form method="post" action="{% url 'account_logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-lg">로그아웃 확인</button>
+    </form>
+
+    <div class="mt-3">
+        <a href="/" class="btn btn-link text-decoration-none text-secondary">취소</a>
+    </div>
+{% endblock %}
