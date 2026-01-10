@@ -1,15 +1,13 @@
 {% extends "base.html" %}
+{% load socialaccount %}
 
 {% block content %}
     <h1>로그인</h1>
     
     <p class="text-muted mb-4">학교 구글 계정으로 로그인해주세요.</p>
 
-    <!-- 구글 로그인 버튼 -->
-    {% load socialaccount %}
     <a href="{% provider_login_url 'google' %}" class="btn btn-outline-dark btn-lg border shadow-sm">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" width="20" class="me-2">
-        Google 계정으로 계속하기
+        <i class="bi bi-google me-2"></i> Google 계정으로 계속하기
     </a>
 
     <div class="mt-4 text-muted small">
