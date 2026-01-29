@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6"> <!-- 너비를 좀 더 넓혔습니다 (col-md-5 -> 6) -->
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-5 text-center">
+                    
+                    <div class="mb-4 text-primary">
+                        <i class="bi bi-person-plus-fill display-1"></i>
+                    </div>
+
+                    <h2 class="fw-bold mb-3">회원가입</h2>
+                    <p class="text-muted mb-4">
+                        학교 아카이브 이용을 위해<br>
+                        구글 계정으로 가입해 주세요.
+                    </p>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger btn-lg rounded-pill shadow-sm">
+                            <i class="bi bi-google me-2"></i>Google 계정으로 가입
+                        </a>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <p class="mb-0 text-secondary">
+                        이미 계정이 있으신가요? 
+                        <a href="{% provider_login_url 'google' %}" class="fw-bold text-decoration-none text-primary">
+                            바로 로그인 하세요
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

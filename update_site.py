@@ -1,6 +1,7 @@
 """
 [파일 경로] update_site.py
-[설명] Serveo가 만들어준 새 주소를 Django와 구글 로그인 설정에 적용합니다.
+[설명] 
+변경된 Serveo 주소(8db0...)를 Django 설정에 적용합니다.
 """
 import os
 import django
@@ -11,9 +12,8 @@ django.setup()
 
 from django.contrib.sites.models import Site
 
-# 👇 [수정] 여기에 serveo 주소를 붙여넣으세요! (https:// 빼고 도메인만)
-# 예: TARGET_DOMAIN = 'myschool.serveo.net'
-TARGET_DOMAIN = 'd16481a48f9c6c54-152-67-193-142.serveousercontent.com' 
+# 👇 [수정됨] 방금 터미널에 뜬 최신 주소!
+TARGET_DOMAIN = 'f8a684c0bda4c60c-152-67-193-142.serveousercontent.com' 
 TARGET_NAME = 'School Archive Test'
 
 try:
@@ -28,14 +28,9 @@ try:
     callback_url = f"https://{TARGET_DOMAIN}/accounts/google/login/callback/"
     
     print("\n" + "="*60)
-    print("🚨 [필수] 구글 클라우드 콘솔에 아래 주소를 등록하세요!")
+    print("🚨 [필수 확인] 구글 클라우드 콘솔에 이 주소가 등록되어 있나요?")
     print("="*60)
-    print(f"\n👉 {callback_url}\n")
-    print("="*60)
-    print("1. 위 주소(https 포함)를 복사하세요.")
-    print("2. 구글 클라우드 콘솔 > 사용자 인증 정보 > 승인된 리디렉션 URI 목록")
-    print("3. 기존 주소를 지우고 위 주소를 새로 등록하세요.")
-    print("4. 등록 후 브라우저에서 https://{TARGET_DOMAIN} 으로 접속하세요.")
+    print(f"👉 {callback_url}")
     print("="*60 + "\n")
 
 except Site.DoesNotExist:

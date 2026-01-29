@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Account Inactive" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-5 text-center">
+                    <!-- 아이콘 (자물쇠) -->
+                    <div class="mb-4">
+                        <i class="bi bi-shield-lock-fill text-warning display-1"></i>
+                    </div>
+                    
+                    <!-- 제목 (수정됨: 적용 확인용) -->
+                    <h2 class="card-title fw-bold mb-3">🔒 승인 대기 중</h2>
+                    
+                    <!-- 설명 텍스트 -->
+                    <p class="card-text text-muted mb-4 lead">
+                        회원가입 신청이 성공적으로 접수되었습니다.<br>
+                        관리자 승인 후 서비스를 이용하실 수 있습니다.
+                    </p>
+
+                    <div class="alert alert-light border mb-4" role="alert">
+                        <small class="text-secondary">
+                            <i class="bi bi-info-circle me-1"></i>
+                            학교 구성원 확인 절차가 진행 중입니다.<br>
+                            잠시만 기다려 주세요.
+                        </small>
+                    </div>
+
+                    <!-- 버튼 -->
+                    <div class="d-grid gap-2">
+                        <a href="/" class="btn btn-primary btn-lg rounded-pill">
+                            <i class="bi bi-house-door-fill me-2"></i>메인으로 돌아가기
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-center py-3 border-0 rounded-bottom-4">
+                    <small class="text-muted">School AI Archive Project</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

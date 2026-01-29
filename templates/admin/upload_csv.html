@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:auth_user_changelist' %}">사용자</a>
+&rsaquo; 일괄 등록 (CSV)
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div>
+            <fieldset class="module aligned">
+                <h2>1. CSV 파일 준비</h2>
+                <div class="description">
+                    <p>다음 형식의 CSV 파일을 준비해주세요 (헤더 포함):</p>
+                    <pre>email,name<br>student1@school.com,홍길동<br>teacher1@school.com,김선생</pre>
+                    <p class="help">
+                        - <strong>email (필수)</strong>: 구글 계정 이메일과 일치해야 합니다.<br>
+                        - <strong>name (선택)</strong>: 사용자의 이름입니다.<br>
+                        - 이 기능을 통해 등록된 유저는 <strong>즉시 승인(Active)</strong> 상태가 됩니다.
+                    </p>
+                </div>
+
+                <h2>2. 파일 업로드</h2>
+                <div class="form-row">
+                    <input type="file" name="csv_file" required accept=".csv">
+                </div>
+            </fieldset>
+
+            <div class="submit-row">
+                <input type="submit" value="일괄 등록 시작" class="default">
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

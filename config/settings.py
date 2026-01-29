@@ -1,9 +1,8 @@
 """
 [파일 경로] config/settings.py
 [설명] 
-1. 누락되었던 allauth(소셜 로그인) 앱들을 다시 등록했습니다.
-2. 템플릿 경로를 올바르게 설정하여 CSS 문제를 해결했습니다.
-3. 구글 로그인 시 회원가입 단계를 건너뛰도록 설정했습니다.
+1. 서브 도메인 'archive.sdjgh-ai.kr'을 정식 호스트로 등록했습니다.
+2. CSRF 신뢰 도메인에도 해당 서브 도메인을 추가했습니다.
 """
 
 from pathlib import Path
@@ -17,10 +16,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-# 개발 모드
-DEBUG = True
+# [배포 설정] 운영 모드 적용 (보안 및 성능 최적화)
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+# [수정됨] 서브 도메인 허용
+ALLOWED_HOSTS = ['*', 'archive.sdjgh-ai.kr']
 
 # Application definition
 INSTALLED_APPS = [
@@ -31,15 +31,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # [핵심] 소셜 로그인 관련 앱 (다시 추가함)
-    'django.contrib.sites',  # 필수
+    # 앱 순서 유지
+    'photo',      
+    'storages',   
+
+    'django.contrib.sites',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.google', # 구글 로그인
-
-    'photo',      # 우리 앱
-    'storages',   # OCI 연동
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -50,17 +50,16 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # [필수] allauth 계정 미들웨어
     "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'config.urls'
 
-# [핵심] 템플릿 설정 (CSS 문제 해결용)
+# 템플릿 설정
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'], # 우리가 만든 templates 폴더를 1순위로!
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -68,7 +67,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # [필수] allauth가 정상 작동하려면 꼭 있어야 함
                 'django.template.context_processors.request', 
             ],
         },
@@ -99,23 +97,28 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 
-# OCI Object Storage 설정
 AWS_STORAGE_BUCKET_NAME = 'school-media'
 OCI_NAMESPACE = 'axypprkugw7b'
 OCI_REGION = 'ap-chuncheon-1'
 
-STORAGES = {
-    "default": {"BACKEND": "config.storage.OCIStorage"},
-    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-}
-
-MEDIA_URL = f'https://objectstorage.{OCI_REGION}.oraclecloud.com/n/{OCI_NAMESPACE}/b/{AWS_STORAGE_BUCKET_NAME}/o/'
+if DEBUG:
+    # [로컬 개발] 내 컴퓨터의 'media' 폴더 사용
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
+else:
+    # [운영 서버] OCI Object Storage 사용
+    STORAGES = {
+        "default": {"BACKEND": "config.storage.OCIStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+    MEDIA_URL = f'https://objectstorage.{OCI_REGION}.oraclecloud.com/n/{OCI_NAMESPACE}/b/{AWS_STORAGE_BUCKET_NAME}/o/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ==========================================
-# 🔐 인증 및 소셜 로그인 설정 (여기 중요!)
-# ==========================================
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
@@ -126,13 +129,15 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {'email'} 
+ACCOUNT_SIGNUP_FIELDS = ['email']
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_SESSION_REMEMBER = True
-ACCOUNT_ADAPTER = 'photo.adapter.CustomAccountAdapter'
 
-# [핵심] 귀찮은 회원가입 폼 건너뛰기
+ACCOUNT_ADAPTER = 'photo.adapter.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'photo.adapter.CustomSocialAccountAdapter'
+
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
@@ -147,3 +152,17 @@ SOCIALACCOUNT_PROVIDERS = {
         'AUTH_PARAMS': {'access_type': 'online'}
     }
 }
+
+# 보안 설정 (HTTPS)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+
+# [수정됨] 서브 도메인 추가
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.serveousercontent.com',
+    'https://*.serveo.net',
+    'https://archive.sdjgh-ai.kr', # 우리의 진짜 서비스 주소
+    'https://*.sdjgh-ai.kr',       # [Cloudflare] 모든 서브 도메인 신뢰
+]

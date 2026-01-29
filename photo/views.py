@@ -3,9 +3,11 @@
 [설명] 검색 기능(q)이 고도화된 뷰입니다.
 사용자 입력(제목, 사용자 설명)과 AI 분석(AI 설명)을 동시에 검색(OR 조건)합니다.
 """
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q  # 검색 기능을 위해 추가 (OR 연산)
+from django.contrib.auth.decorators import login_required
 from .models import MediaPost, TextPost, CodeLink, OfficialLink
+from .forms import MediaPostForm, TextPostForm, CodeLinkForm
 
 def index(request):
     # 1. 검색어 가져오기 (GET 파라미터 'q')
@@ -41,4 +43,39 @@ def index(request):
     }
 
     # 5. HTML 렌더링
+    # 5. HTML 렌더링
     return render(request, 'index.html', context)
+
+# ----------------------------
+# 📝 작성 기능 (Views) 
+# 모델별로 별도 페이지 없이 처리하거나, 리디렉션만 함
+# ----------------------------
+
+@login_required
+def media_create(request):
+    if request.method == 'POST':
+        form = MediaPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.is_public = True # 기본적으로 공개 (관리자가 추후 숨김 가능)
+            post.save()
+            return redirect('/?tab=media') # 갤러리 탭으로 복귀
+    return redirect('/')
+
+@login_required
+def text_create(request):
+    if request.method == 'POST':
+        form = TextPostForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('/?tab=text') # 게시판 탭으로 복귀
+    return redirect('/')
+
+@login_required
+def code_create(request):
+    if request.method == 'POST':
+        form = CodeLinkForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('/?tab=code') # 자료실 탭으로 복귀
+    return redirect('/')

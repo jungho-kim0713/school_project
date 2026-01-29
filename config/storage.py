@@ -19,12 +19,28 @@ class OCIStorage(Storage):
         try:
             # 1. 설정 로드
             self.config_profile = "DEFAULT"
-            self.config_path = "/home/ubuntu/.oci/config"
             
-            logger.info(f"🔧 [OCI Init] 설정 파일 경로: {self.config_path}")
+            # [수정] 서버 경로와 로컬 경로 모두 확인
+            server_config = "/home/ubuntu/.oci/config"
+            local_config = os.path.expanduser("~/.oci/config")
+            
+            if os.path.exists(server_config):
+                self.config_path = server_config
+            elif os.path.exists(local_config):
+                self.config_path = local_config
+            else:
+                if settings.DEBUG:
+                    logger.warning("⚠️ [Local Dev] OCI Config 파일을 찾을 수 없어 더미 모드로 동작합니다.")
+                    self.object_storage = None
+                    # [Fix] 조기 리턴 시에도 필수 속성은 반드시 채워야 함
+                    self.namespace = "dummy_namespace"
+                    self.bucket_name = "dummy_bucket"
+                    self.region = "ap-chuncheon-1"
+                    return
+                else:
+                    raise FileNotFoundError(f"🚨 OCI Config 파일을 찾을 수 없습니다: {server_config}")
 
-            if not os.path.exists(self.config_path):
-                raise FileNotFoundError(f"🚨 OCI Config 파일을 찾을 수 없습니다: {self.config_path}")
+            logger.info(f"🔧 [OCI Init] 설정 파일 경로: {self.config_path}")
 
             self.config = oci.config.from_file(self.config_path, self.config_profile)
             self.object_storage = oci.object_storage.ObjectStorageClient(self.config)
@@ -37,14 +53,27 @@ class OCIStorage(Storage):
             logger.info(f"🔧 [OCI Init] 연결 준비 완료: Bucket={self.bucket_name}, Namespace={self.namespace}")
 
         except Exception as e:
-            logger.error(f"❌ [OCI Init Error] 초기화 실패: {e}")
-            raise e
+            if settings.DEBUG:
+                logger.error(f"❌ [OCI Init Error] 초기화 실패 (로컬 디버그 모드라 무시함): {e}")
+                self.object_storage = None
+                self.namespace = "dummy_namespace"
+                self.bucket_name = "dummy_bucket"
+                self.region = "ap-chuncheon-1"
+            else:
+                logger.error(f"❌ [OCI Init Error] 초기화 실패: {e}")
+                raise e
 
     def _open(self, name, mode='rb'):
+        if not self.object_storage:
+             return ContentFile(b"dummy content")
         response = self.object_storage.get_object(self.namespace, self.bucket_name, name)
         return ContentFile(response.data.content)
 
     def _save(self, name, content):
+        if not self.object_storage:
+            logger.warning(f"⚠️ [Dummy Save] OCI가 연결되지 않아 저장을 건너뜁니다: {name}")
+            return name
+
         try:
             # 1. 파일 데이터 읽기
             content.seek(0)
@@ -84,12 +113,16 @@ class OCIStorage(Storage):
             raise e
 
     def delete(self, name):
+        if not self.object_storage:
+            return
         try:
             self.object_storage.delete_object(self.namespace, self.bucket_name, name)
         except Exception:
             pass
 
     def exists(self, name):
+        if not self.object_storage:
+            return False
         try:
             self.object_storage.head_object(self.namespace, self.bucket_name, name)
             return True

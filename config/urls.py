@@ -14,6 +14,11 @@ urlpatterns = [
     # [핵심] 로그인/로그아웃 경로 연결 (이게 없어서 그동안 404가 떴던 겁니다)
     path('accounts/', include('allauth.urls')),
     
+    # [작성 기능]
+    path('media/create/', views.media_create, name='media_create'),
+    path('text/create/', views.text_create, name='text_create'),
+    path('code/create/', views.code_create, name='code_create'),
+    
     path('', views.index, name='index'),
 ]
 
