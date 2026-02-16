@@ -17,7 +17,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # [배포 설정] 로컬 테스트 시 True, 운영 서버 배포 시 False로 변경
-DEBUG = True  # ← 로컬 테스트용으로 True 설정
+# [배포 설정] 로컬 테스트 시 True, 운영 서버 배포 시 False로 변경
+DEBUG = False  # ← 운영 서버 배포를 위해 False로 변경
+
+# [추가] 로그인 페이지 경로 명시
+LOGIN_URL = '/accounts/login/'
 
 # [수정됨] 서브 도메인 허용
 ALLOWED_HOSTS = ['*', 'archive.sdjgh-ai.kr']
