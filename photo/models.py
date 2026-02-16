@@ -3,7 +3,8 @@ from django.db import models
 # 1. 이미지 및 영상 게시판 모델
 class MediaPost(models.Model):
     title = models.CharField(max_length=100, verbose_name="제목")
-    file = models.FileField(upload_to='media_posts/', verbose_name="이미지/영상 파일")
+    file = models.FileField(upload_to='media_posts/', verbose_name="이미지/영상 파일 (애니메이션 스타일)")
+    original_file = models.FileField(upload_to='media_posts/originals/', verbose_name="원본 파일 (관리자 전용)", blank=True, null=True)
     ai_caption = models.TextField(verbose_name="AI 분석 설명", blank=True, null=True)
     description = models.TextField(verbose_name="설명", blank=True)
     like_count = models.PositiveIntegerField(default=0, verbose_name="좋아요 수")

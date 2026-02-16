@@ -7,21 +7,56 @@ admin.site.index_title = "콘텐츠 통합 관리소"
 
 @admin.register(MediaPost)
 class MediaPostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'like_count', 'is_public', 'created_at')
+    list_display = ('title', 'like_count', 'is_public', 'created_at', 'has_original')
     list_filter = ('is_public', 'created_at')
     search_fields = ('title', 'description')
-    
-    # 'file_url'과 'ai_caption'을 읽기 전용으로 화면에 표시합니다.
-    readonly_fields = ('file_url', 'ai_caption')
 
-    # 파일의 전체 URL을 보여주는 함수
+    # 'file_url', 'original_file_url', 'ai_caption'을 읽기 전용으로 화면에 표시
+    readonly_fields = ('file_url', 'original_file_url', 'file_preview', 'original_preview', 'ai_caption')
+
+    # 카툰 필터 적용된 파일의 URL
     def file_url(self, obj):
         if obj.file:
-            # 클릭 가능한 링크 형태로 보여줍니다.
             return format_html('<a href="{}" target="_blank">{}</a>', obj.file.url, obj.file.url)
         return "파일 없음"
-    
-    file_url.short_description = "파일 URL (OCI 저장소)"
+    file_url.short_description = "🎨 변환된 파일 URL (애니메이션 스타일)"
+
+    # 원본 파일의 URL (관리자 전용)
+    def original_file_url(self, obj):
+        if obj.original_file:
+            return format_html(
+                '<a href="{}" target="_blank" style="color: red; font-weight: bold;">⚠️ 원본 파일 보기 (개인정보 포함)</a>',
+                obj.original_file.url
+            )
+        return "원본 없음"
+    original_file_url.short_description = "📁 원본 파일 URL (관리자 전용)"
+
+    # 카툰 필터 적용된 이미지 미리보기
+    def file_preview(self, obj):
+        if obj.file:
+            return format_html(
+                '<img src="{}" style="max-width: 300px; max-height: 300px; border: 2px solid #4CAF50;" />',
+                obj.file.url
+            )
+        return "미리보기 없음"
+    file_preview.short_description = "🎨 애니메이션 스타일 미리보기"
+
+    # 원본 이미지 미리보기
+    def original_preview(self, obj):
+        if obj.original_file:
+            return format_html(
+                '<img src="{}" style="max-width: 300px; max-height: 300px; border: 2px solid #f44336;" />',
+                obj.original_file.url
+            )
+        return "원본 없음"
+    original_preview.short_description = "📁 원본 이미지 미리보기 (관리자 전용)"
+
+    # 목록에서 원본 보유 여부 표시
+    def has_original(self, obj):
+        if obj.original_file:
+            return format_html('<span style="color: green;">{}</span>', '✅')
+        return format_html('<span style="color: gray;">{}</span>', '❌')
+    has_original.short_description = "원본 보유"
 
 @admin.register(TextPost)
 class TextPostAdmin(admin.ModelAdmin):

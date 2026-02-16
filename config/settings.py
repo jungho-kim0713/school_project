@@ -16,8 +16,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-# [배포 설정] 운영 모드 적용 (보안 및 성능 최적화)
-DEBUG = False
+# [배포 설정] 로컬 테스트 시 True, 운영 서버 배포 시 False로 변경
+DEBUG = True  # ← 로컬 테스트용으로 True 설정
 
 # [수정됨] 서브 도메인 허용
 ALLOWED_HOSTS = ['*', 'archive.sdjgh-ai.kr']
