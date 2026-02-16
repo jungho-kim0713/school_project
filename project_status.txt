@@ -191,7 +191,7 @@ Cloudflare Proxied 전환: SSL/TLS 설정을 'Full (Strict)'로 변경 후 DNS P
 
 3. 서버 배포 (OCI 서버)
    ssh -i sdjgh_key_2026.key ubuntu@152.67.193.142
-   cd school_project  (또는 sdjgh_ai)
+   cd school_project 
    
    # 강제로 최신 코드 덮어쓰기 (에러 방지용)
    git fetch --all
