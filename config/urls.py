@@ -27,6 +27,7 @@ urlpatterns = [
     path('', views.index, name='index'),
 ]
 
-# 미디어 파일(사진)을 위한 설정
+# 미디어 파일(사진)과 정적 파일(CSS, JS)을 위한 설정
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) # [추가] 정적 파일 서빙

@@ -18,7 +18,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 # [배포 설정] 로컬 테스트 시 True, 운영 서버 배포 시 False로 변경
 # [배포 설정] 로컬 테스트 시 True, 운영 서버 배포 시 False로 변경
-DEBUG = False  # ← 운영 서버 배포를 위해 False로 변경
+# .env 파일에 DEBUG=True 가 있으면 로컬 모드(True), 없으면 운영 모드(False)로 동작합니다.
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # [추가] 로그인 페이지 경로 명시
 LOGIN_URL = '/accounts/login/'
@@ -158,10 +159,15 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 # 보안 설정 (HTTPS)
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+if DEBUG:
+    SECURE_PROXY_SSL_HEADER = None
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'
+else:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 # [수정됨] 서브 도메인 추가
 CSRF_TRUSTED_ORIGINS = [
@@ -169,4 +175,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.serveo.net',
     'https://archive.sdjgh-ai.kr', # 우리의 진짜 서비스 주소
     'https://*.sdjgh-ai.kr',       # [Cloudflare] 모든 서브 도메인 신뢰
+    'http://127.0.0.1:8000',       # [로컬] 개발 환경 신뢰
+    'http://localhost:8000',
 ]
