@@ -9,6 +9,7 @@ class MediaPost(models.Model):
     description = models.TextField(verbose_name="설명", blank=True)
     like_count = models.PositiveIntegerField(default=0, verbose_name="좋아요 수")
     is_public = models.BooleanField(default=True, verbose_name="공개 여부")
+    apply_webtoon_filter = models.BooleanField(default=False, verbose_name="웹툰체로 변환")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="작성일")
 
     def __str__(self):

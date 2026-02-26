@@ -32,9 +32,12 @@
         /* 카드 이미지 높이 고정 + 전체 이미지 보이도록 */
         .card-img-top {
             height: 250px;
-            object-fit: contain; /* 이미지가 잘리지 않고 전체가 보임 */
-            background-color: #f8f9fa; /* 여백 배경색 */
-            cursor: pointer; /* 클릭 가능함을 표시 */
+            object-fit: contain;
+            /* 이미지가 잘리지 않고 전체가 보임 */
+            background-color: #f8f9fa;
+            /* 여백 배경색 */
+            cursor: pointer;
+            /* 클릭 가능함을 표시 */
         }
 
         /* 이미지 모달 스타일 */
@@ -81,8 +84,13 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         /* 링크 카드 스타일 (4:3 비율) */
@@ -249,6 +257,13 @@
                             <textarea name="description" class="form-control" rows="3"
                                 placeholder="어떤 상황인가요?"></textarea>
                         </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="applyWebtoonFilter"
+                                name="apply_webtoon_filter">
+                            <label class="form-check-label text-primary fw-bold" for="applyWebtoonFilter">
+                                ✨ AI 웹툰체로 변환하기
+                            </label>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
@@ -384,8 +399,7 @@
                         <div class="card h-100 shadow-sm border-0 hover-shadow">
                             {% if post.file %}
                             <img src="{{ post.file.url }}" class="card-img-top" alt="{{ post.title }}"
-                                onclick="openImageModal(this.src, '{{ post.title }}')"
-                                oncontextmenu="return false"
+                                onclick="openImageModal(this.src, '{{ post.title }}')" oncontextmenu="return false"
                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=No+Image';">
                             {% else %}
                             <div
@@ -667,7 +681,7 @@
             modalTitle.textContent = title || '';
 
             // ESC 키로 닫기
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     closeImageModal();
                 }
@@ -680,7 +694,7 @@
         }
 
         // 모달 배경 클릭 시 닫기
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             const modal = document.getElementById('imageModal');
             if (e.target === modal) {
                 closeImageModal();
