@@ -20,7 +20,7 @@ urlpatterns = [
     path('login/', RedirectView.as_view(url='/accounts/login/', permanent=False)),
     
     # [작성 기능]
-    path('media/create/', views.media_create, name='media_create'),
+    path('gallery/create/', views.media_create, name='media_create'),
     path('text/create/', views.text_create, name='text_create'),
     path('code/create/', views.code_create, name='code_create'),
     
