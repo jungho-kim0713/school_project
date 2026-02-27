@@ -16,7 +16,6 @@ from django.dispatch import receiver
 from django.core.files.base import ContentFile
 from .models import MediaPost
 from .filters import apply_webtoon_filter
-import google.generativeai as genai
 from PIL import Image
 from io import BytesIO
 
@@ -115,6 +114,7 @@ def generate_caption(sender, instance, created, **kwargs):
         logger.info(f"🤖 [AI Start] 이미지 분석 시작: {instance.title}")
 
         # 4. 구글 클라이언트 초기화
+        import google.generativeai as genai
         api_key = os.getenv('GEMINI_API_KEY')
 
         if not api_key:
