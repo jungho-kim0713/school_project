@@ -5,13 +5,11 @@
 - Gemini Webtoon Filter: Google Gemini를 사용한 고품질 웹툰 스타일 변환
 """
 
-import cv2
-import numpy as np
+import os
+import base64
 from PIL import Image
 from io import BytesIO
 import logging
-import os
-import base64
 import json
 import requests
 import fal_client
