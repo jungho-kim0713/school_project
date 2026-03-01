@@ -25,8 +25,7 @@ def index(request):
         # 이 세 가지 필드 중 하나라도 검색어를 포함하면 결과에 나옵니다.
         media_posts = media_posts.filter(
             Q(title__icontains=query) | 
-            Q(description__icontains=query) |  # <--- 사용자 설명 추가됨
-            Q(ai_caption__icontains=query)
+            Q(description__icontains=query)  # <--- 사용자 설명 추가됨
         )
         
         # [보너스] 게시판과 코드 자료실도 제목으로 검색되도록 유지

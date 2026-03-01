@@ -11,8 +11,8 @@ class MediaPostAdmin(admin.ModelAdmin):
     list_filter = ('is_public', 'created_at')
     search_fields = ('title', 'description')
 
-    # 'file_url', 'original_file_url', 'ai_caption'을 읽기 전용으로 화면에 표시
-    readonly_fields = ('file_url', 'original_file_url', 'file_preview', 'original_preview', 'ai_caption')
+    # 'file_url', 'original_file_url'을 읽기 전용으로 화면에 표시
+    readonly_fields = ('file_url', 'original_file_url', 'file_preview', 'original_preview')
 
     # 카툰 필터 적용된 파일의 URL
     def file_url(self, obj):
