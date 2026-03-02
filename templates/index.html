@@ -241,7 +241,8 @@
                     <h5 class="modal-title fw-bold">📸 사진 올리기</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="{% url 'media_create' %}" method="post" enctype="multipart/form-data">
+                <form action="{% url 'media_create' %}" method="post" enctype="multipart/form-data"
+                    id="mediaUploadForm">
                     {% csrf_token %}
                     <div class="modal-body">
                         <div class="mb-3">
@@ -748,93 +749,152 @@
             }
         });
 
-        // [NEW] 댓글 버튼 텍스트 변경
-        document.querySelectorAll('.comment-toggle-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const textSpan = this.querySelector('.comment-toggle-text');
-                const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                textSpan.textContent = isExpanded ? '댓글 감추기' : '댓글 보기';
+        // [NEW] DOMContentLoaded 블록 내부에 넣어야 이벤트 리스너가 정상 연결됨
+        document.addEventListener('DOMContentLoaded', function () {
+            // [NEW] 댓글 버튼 텍스트 변경
+            document.querySelectorAll('.comment-toggle-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const textSpan = this.querySelector('.comment-toggle-text');
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    textSpan.textContent = isExpanded ? '댓글 감추기' : '댓글 보기';
+                });
             });
-        });
 
-        // [NEW] 좋아요 토글 기능
-        document.querySelectorAll('.like-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const postId = this.dataset.postId;
-                const icon = this.querySelector('.like-icon');
-                const countSpan = this.querySelector('.like-count');
+            // [NEW] 좋아요 토글 기능
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const postId = this.dataset.postId;
+                    const icon = this.querySelector('.like-icon');
+                    const countSpan = this.querySelector('.like-count');
 
-                fetch(`/like/${postId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            countSpan.textContent = data.likes_count;
-                            if (data.liked) {
-                                icon.classList.remove('bi-heart');
-                                icon.classList.add('bi-heart-fill');
-                            } else {
-                                icon.classList.remove('bi-heart-fill');
-                                icon.classList.add('bi-heart');
+                    fetch(`/like/${postId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                countSpan.textContent = data.likes_count;
+                                if (data.liked) {
+                                    icon.classList.remove('bi-heart');
+                                    icon.classList.add('bi-heart-fill');
+                                } else {
+                                    icon.classList.remove('bi-heart-fill');
+                                    icon.classList.add('bi-heart');
+                                }
                             }
-                        }
-                    })
-                    .catch(err => console.error('Like error:', err));
+                        })
+                        .catch(err => console.error('Like error:', err));
+                });
             });
-        });
 
-        // [NEW] 댓글 등록 기능
-        document.querySelectorAll('.comment-form').forEach(form => {
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const postId = this.dataset.postId;
-                const inputField = this.querySelector('input[name="content"]');
-                const content = inputField.value;
-                const listEl = document.getElementById(`comment-list-${postId}`);
+            // [NEW] 모달 폼 비동기 업로드 로직
+            const mediaForm = document.getElementById('mediaUploadForm');
+            if (mediaForm) {
+                mediaForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
 
-                fetch(`/comment/add/${postId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ content: content })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            inputField.value = '';
-                            const noMsg = listEl.querySelector('.no-comment-msg');
-                            if (noMsg) noMsg.remove();
+                    // 모달 닫기
+                    const modalEl = document.getElementById('mediaModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
 
-                            const newCommentHTML = `
-                            <div class="small mb-2 pb-2 border-bottom" id="comment-${data.comment_id}">
-                                <div class="d-flex justify-content-between">
-                                    <strong class="text-primary">${data.author}</strong>
-                                    <span class="text-muted" style="font-size: 0.75rem;">${data.created_at}
-                                        <a href="javascript:void(0)" onclick="deleteComment(${data.comment_id})" class="text-danger ms-1 text-decoration-none"><i class="bi bi-x"></i></a>
-                                    </span>
-                                </div>
-                                <div class="text-break">${data.content}</div>
-                            </div>`;
-                            listEl.insertAdjacentHTML('beforeend', newCommentHTML);
+                    // Toast 보여주기
+                    const toastEl = document.getElementById('uploadToast');
+                    const toastMsg = document.getElementById('uploadToastMessage');
 
-                            // 스크롤 맨 아래로 이동
-                            listEl.parentElement.scrollTop = listEl.parentElement.scrollHeight;
-                        }
+                    toastEl.classList.remove('bg-success', 'bg-danger');
+                    toastEl.classList.add('bg-primary');
+                    toastMsg.textContent = "사진을 업로드하고 있습니다. 업로드 전까지 웹페이지를 이용하실 수 있습니다.";
+
+                    const toast = new bootstrap.Toast(toastEl, { autohide: false });
+                    toast.show();
+
+                    const formData = new FormData(this);
+
+                    fetch(this.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        body: formData
                     })
-                    .catch(err => console.error('Comment error:', err));
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                toastEl.classList.remove('bg-primary');
+                                toastEl.classList.add('bg-success');
+                                toastMsg.textContent = "사진이 업로드 되었습니다. 3초 뒤에 화면이 새로고침 됩니다.";
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 3000);
+                            } else {
+                                toastEl.classList.remove('bg-primary');
+                                toastEl.classList.add('bg-danger');
+                                toastMsg.textContent = "업로드에 실패했습니다.";
+                                setTimeout(() => { toast.hide(); }, 3000);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Upload error:', err);
+                            toastEl.classList.remove('bg-primary');
+                            toastEl.classList.add('bg-danger');
+                            toastMsg.textContent = "업로드 중 서버 오류가 발생했습니다.";
+                            setTimeout(() => { toast.hide(); }, 3000);
+                        });
+                });
+            }
+
+            // [NEW] 댓글 등록 기능
+            document.querySelectorAll('.comment-form').forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const postId = this.dataset.postId;
+                    const inputField = this.querySelector('input[name="content"]');
+                    const content = inputField.value;
+                    const listEl = document.getElementById(`comment-list-${postId}`);
+
+                    fetch(`/comment/add/${postId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ content: content })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                inputField.value = '';
+                                const noMsg = listEl.querySelector('.no-comment-msg');
+                                if (noMsg) noMsg.remove();
+
+                                const newCommentHTML = `
+                                <div class="small mb-2 pb-2 border-bottom" id="comment-${data.comment_id}">
+                                    <div class="d-flex justify-content-between">
+                                        <strong class="text-primary">${data.author}</strong>
+                                        <span class="text-muted" style="font-size: 0.75rem;">${data.created_at}
+                                            <a href="javascript:void(0)" onclick="deleteComment(${data.comment_id})" class="text-danger ms-1 text-decoration-none"><i class="bi bi-x"></i></a>
+                                        </span>
+                                    </div>
+                                    <div class="text-break">${data.content}</div>
+                                </div>`;
+                                listEl.insertAdjacentHTML('beforeend', newCommentHTML);
+
+                                // 스크롤 맨 아래로 이동
+                                listEl.parentElement.scrollTop = listEl.parentElement.scrollHeight;
+                            }
+                        })
+                        .catch(err => console.error('Comment error:', err));
+                });
             });
-        });
-            
         }); // DOMContentLoaded 닫기
 
         // 모달 닫기
@@ -872,6 +932,21 @@
             <img id="modalImage" src="" alt="">
             <div class="text-center mt-3">
                 <h5 id="modalTitle" class="text-white"></h5>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Toast 알림 컨테이너 -->
+    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 9999">
+        <div id="uploadToast" class="toast align-items-center text-white bg-primary border-0" role="alert"
+            aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+            <div class="d-flex">
+                <div class="toast-body" id="uploadToastMessage">
+                    사진을 업로드하고 있습니다. 업로드 전까지 웹페이지를 이용하실 수 있습니다.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
             </div>
         </div>
     </div>
