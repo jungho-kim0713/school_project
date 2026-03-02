@@ -6,8 +6,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q  # 검색 기능을 위해 추가 (OR 연산)
 from django.contrib.auth.decorators import login_required
-from .models import MediaPost, TextPost, CodeLink, OfficialLink
+from django.http import JsonResponse
+from .models import MediaPost, TextPost, CodeLink, OfficialLink, Comment
 from .forms import MediaPostForm, TextPostForm, CodeLinkForm
+import json
 
 def index(request):
     # 1. 검색어 가져오기 (GET 파라미터 'q')
@@ -54,11 +56,18 @@ def index(request):
 def media_create(request):
     if request.method == 'POST':
         form = MediaPostForm(request.POST, request.FILES)
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get('accept') == 'application/json' or 'fetch' in request.headers.get('accept', '')
+
         if form.is_valid():
             post = form.save(commit=False)
             post.is_public = True # 기본적으로 공개 (관리자가 추후 숨김 가능)
             post.save()
+            if is_ajax:
+                return JsonResponse({"status": "success", "message": "사진이 업로드 되었습니다."})
             return redirect('/?tab=media') # 갤러리 탭으로 복귀
+        else:
+            if is_ajax:
+                return JsonResponse({"status": "error", "message": "입력값이 올바르지 않습니다.", "errors": form.errors}, status=400)
     return redirect('/')
 
 @login_required
@@ -78,3 +87,58 @@ def code_create(request):
             form.save()
             return redirect('/?tab=code') # 자료실 탭으로 복귀
     return redirect('/')
+
+# ----------------------------
+# ❤️ 좋아요 & 💬 댓글 기능
+# ----------------------------
+
+@login_required
+def toggle_like(request, post_id):
+    if request.method == 'POST':
+        post = get_object_or_404(MediaPost, id=post_id)
+        if request.user in post.likes.all():
+            post.likes.remove(request.user)
+            liked = False
+        else:
+            post.likes.add(request.user)
+            liked = True
+        return JsonResponse({'status': 'success', 'liked': liked, 'likes_count': post.likes.count()})
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def add_comment(request, post_id):
+    if request.method == 'POST':
+        post = get_object_or_404(MediaPost, id=post_id)
+        content = request.POST.get('content')
+        if not content:
+            try:
+                data = json.loads(request.body)
+                content = data.get('content')
+            except:
+                pass
+        
+        if content:
+            comment = Comment.objects.create(post=post, author=request.user, content=content)
+            is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get('accept') == 'application/json' or 'fetch' in request.headers.get('accept', '')
+            if is_ajax:
+                return JsonResponse({
+                    'status': 'success',
+                    'comment_id': comment.id,
+                    'author': comment.author.username,
+                    'content': comment.content,
+                    'created_at': comment.created_at.strftime('%m.%d %H:%M')
+                })
+            return redirect('/?tab=media')
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def delete_comment(request, comment_id):
+    if request.method == 'POST':
+        comment = get_object_or_404(Comment, id=comment_id)
+        if request.user == comment.author or request.user.is_superuser:
+            comment.delete()
+            is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get('accept') == 'application/json' or 'fetch' in request.headers.get('accept', '')
+            if is_ajax:
+                return JsonResponse({'status': 'success'})
+            return redirect('/?tab=media')
+    return JsonResponse({'status': 'error'}, status=403)

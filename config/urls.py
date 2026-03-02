@@ -24,6 +24,11 @@ urlpatterns = [
     path('text/create/', views.text_create, name='text_create'),
     path('code/create/', views.code_create, name='code_create'),
     
+    # [인터랙션 기능]
+    path('like/<int:post_id>/', views.toggle_like, name='toggle_like'),
+    path('comment/add/<int:post_id>/', views.add_comment, name='add_comment'),
+    path('comment/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
+    
     path('', views.index, name='index'),
 ]
 

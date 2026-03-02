@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # 1. 이미지 및 영상 게시판 모델
 class MediaPost(models.Model):
@@ -6,7 +7,7 @@ class MediaPost(models.Model):
     file = models.FileField(upload_to='media_posts/', verbose_name="이미지/영상 파일 (애니메이션 스타일)")
     original_file = models.FileField(upload_to='media_posts/originals/', verbose_name="원본 파일 (관리자 전용)", blank=True, null=True)
     description = models.TextField(verbose_name="설명", blank=True)
-    like_count = models.PositiveIntegerField(default=0, verbose_name="좋아요 수")
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True, verbose_name="좋아요 누른 사용자들")
     is_public = models.BooleanField(default=True, verbose_name="공개 여부")
     apply_webtoon_filter = models.BooleanField(default=False, verbose_name="웹툰체로 변환")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="작성일")
@@ -55,3 +56,13 @@ class OfficialLink(models.Model):
 
     def __str__(self):
         return f"[링크] {self.title}"
+
+# 5. 사진 댓글 모델
+class Comment(models.Model):
+    post = models.ForeignKey(MediaPost, on_delete=models.CASCADE, related_name='comments', verbose_name="게시물")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="작성자")
+    content = models.TextField(verbose_name="내용")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="작성일")
+
+    def __str__(self):
+        return f"{self.author.username}: {self.content[:20]}"

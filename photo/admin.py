@@ -1,15 +1,19 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import MediaPost, TextPost, CodeLink, OfficialLink
+from .models import MediaPost, TextPost, CodeLink, OfficialLink, Comment
 
 admin.site.site_header = "학교 AI 홍보 플랫폼 관리"
 admin.site.index_title = "콘텐츠 통합 관리소"
 
 @admin.register(MediaPost)
 class MediaPostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'like_count', 'is_public', 'created_at', 'has_original')
+    list_display = ('title', 'get_likes_count', 'is_public', 'created_at', 'has_original')
     list_filter = ('is_public', 'created_at')
     search_fields = ('title', 'description')
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+    get_likes_count.short_description = '좋아요 수'
 
     # 'file_url', 'original_file_url'을 읽기 전용으로 화면에 표시
     readonly_fields = ('file_url', 'original_file_url', 'file_preview', 'original_preview')
@@ -73,6 +77,11 @@ class CodeLinkAdmin(admin.ModelAdmin):
 class OfficialLinkAdmin(admin.ModelAdmin):
     list_display = ('title', 'icon_type', 'url')
     list_editable = ('url',)
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('post', 'author', 'content', 'created_at')
+    search_fields = ('content', 'author__username')
 
 # ----------------------------------------------------
 # 5. [NEW] 사용자 일괄 등록 (CSV) 기능 추가
