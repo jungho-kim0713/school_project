@@ -431,9 +431,9 @@
                                         <i class="bi bi-heart-fill text-danger fs-5 align-middle like-icon"></i>
                                         {% else %}
                                         <i class="bi bi-heart text-danger fs-5 align-middle like-icon"></i>
-                                        {% endif %}
-                                        <span class="text-dark ms-1 align-middle fw-bold like-count">{{ post.likes.count
-                                            }}</span>
+                                        <span class="text-dark ms-1 align-middle fw-bold like-count">
+                                            {{ post.likes.count }}
+                                        </span>
                                     </button>
                                 </div>
                             </div>
@@ -446,8 +446,8 @@
                                         <div class="small mb-2 pb-2 border-bottom" id="comment-{{ comment.id }}">
                                             <div class="d-flex justify-content-between">
                                                 <strong class="text-primary">{{ comment.author.username }}</strong>
-                                                <span class="text-muted" style="font-size: 0.75rem;">{{
-                                                    comment.created_at|date:"m.d H:i" }}
+                                                <span class="text-muted" style="font-size: 0.75rem;">
+                                                    {{ comment.created_at|date:"m.d H:i" }}
                                                     {% if user == comment.author or user.is_superuser %}
                                                     <a href="javascript:void(0)"
                                                         onclick="deleteComment({{ comment.id }})"
